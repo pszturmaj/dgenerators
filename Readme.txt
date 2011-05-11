@@ -27,3 +27,8 @@ void main(string[] argv)
     foreach (sqr; generator(&genSquares, 10, 20))
         writeln(sqr);
 }
+
+Known issues:
+----------------
+* Exceptions don't work. Fiber.call() should rethrow them, but it's not happening.
+  I don't know, but that may be a bug in Fiber class.

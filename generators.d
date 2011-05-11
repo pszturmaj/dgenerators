@@ -1,25 +1,25 @@
+// License: public domain
 module generators;
 
-import std.traits, core.thread;
+import std.traits, std.typetuple, core.thread;
+import std.conv : text;
 
 void yield(alias var)(typeof(var) value)
 {
     static assert(__traits(isOut, var), "Yield works only with OUT arguments");
-    Fiber fiber = Fiber.getThis();
+    auto fiber = Fiber.getThis();
     if (!fiber)
         return; // do nothing
     var = value;
     Fiber.yield();
 }
 
-private template _generator(T...)
+private template Generator(T...)
     if (staticLength!T >= 1 && isCallable!(T[0]))
 {
     alias T[0] F;
     alias ParameterTypeTuple!F AllParams;
     alias ParameterStorageClassTuple!F Stc;
-    
-    import std.typetuple;
     
     template StripOutParams(size_t i)
     {
@@ -37,8 +37,9 @@ private template _generator(T...)
     alias StripOutParams!0 Params;
 
     static assert(AllParams.length - Params.length == 1, "Generator function must have exactly one OUT argument");
-    static assert(is(ReturnType!F == void), (&F).stringof ~ ", does not return void");
-    static assert(is(Params == T[1..$]), "Arguments do not match");
+    static assert(is(ReturnType!F == void), F.stringof ~ ", does not return void");
+    static assert(Params.length == T.length - 1, text("Generator ", F.stringof, " expects ", Params.length,
+                                                      " argument(s), not ", T.length - 1));
     
     template OutParamIndex(size_t i)
     {
@@ -83,7 +84,7 @@ private template _generator(T...)
             fn(allParams);
         }
         
-        bool empty()
+        @property bool empty()
         {
             return state == State.TERM;
         }
@@ -93,7 +94,7 @@ private template _generator(T...)
             call();
         }
         
-        pure nothrow ValueType front()
+        @property pure nothrow ValueType front()
         {
             return allParams[outIndex];
         }
@@ -102,5 +103,5 @@ private template _generator(T...)
 
 auto generator(T...)(T t)
 {
-    return new _generator!T.Generator(t);
+    return new Generator!T.Generator(t);
 }
