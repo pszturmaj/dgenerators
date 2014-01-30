@@ -15,7 +15,7 @@ void yield(alias var)(typeof(var) value)
 }
 
 private template Generator(T...)
-    if (staticLength!T >= 1 && isCallable!(T[0]))
+    if (T.length >= 1 && isCallable!(T[0]))
 {
     alias T[0] F;
     alias ParameterTypeTuple!F AllParams;
@@ -25,7 +25,7 @@ private template Generator(T...)
     {
         static if (i < AllParams.length)
         {
-            static if (Stc[i] != ParameterStorageClass.OUT)
+            static if (Stc[i] != ParameterStorageClass.out_)
                 alias TypeTuple!(AllParams[i], StripOutParams!(i + 1)) StripOutParams;
             else
                 alias StripOutParams!(i + 1) StripOutParams;
@@ -45,7 +45,7 @@ private template Generator(T...)
     {
         static if (i < AllParams.length)
         {
-            static if (Stc[i] == ParameterStorageClass.OUT)
+            static if (Stc[i] == ParameterStorageClass.out_)
                 enum OutParamIndex = i;
             else
                 enum OutParamIndex = OutParamIndex!(i + 1);
@@ -103,5 +103,5 @@ private template Generator(T...)
 
 auto generator(T...)(T t)
 {
-    return new Generator!T.Generator(t);
+    return new Generator!T(t);
 }
